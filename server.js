@@ -68,7 +68,7 @@ return res.status(500).json({ error: "Video generation failed" });
 
 res.json({
 status: "success",
-videoUrl: "https://aware-creation-production-4ba6.up.railway.app/video.mp4"
+videoUrl: `${req.protocol}://${req.get("host")}/video.mp4`
 });
 
 });
