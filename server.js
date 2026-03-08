@@ -169,11 +169,6 @@ while (scenes.length < 5) {
       images.push(images[0]);
     }
 
-    script = script
-    .replace(/['":?]/g, "")
-    .replace(/\n/g, " ")
-    .substring(0, 120);
-
     const output = "/tmp/video.mp4";
 
    const command = `
