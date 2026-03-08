@@ -137,9 +137,29 @@ app.post("/generate-video", async (req, res) => {
       return res.status(400).json({ error: "Could not extract product data" });
     }
 
-    let script =
-      req.body.script ||
-      `${title}. Rated ${rating}. Price ${price}. ${features.join(". ")}`;
+ const scenes = [];
+
+// Scene 1 — Hook
+scenes.push(`Looking for a good ${title}?`);
+
+// Scene 2 — Rating
+if (rating) {
+  scenes.push(`This product is rated ${rating} on Amazon`);
+}
+
+// Scene 3 & 4 — Features
+features.slice(0,2).forEach(f => {
+  scenes.push(f);
+});
+
+// Scene 5 — CTA
+scenes.push(`Check the link in description to see the latest price`);
+
+// Ensure we always have 5 scenes
+while (scenes.length < 5) {
+  scenes.push(`Great choice for your home`);
+}
+
 
     if (images.length === 0) {
       return res.status(400).json({ error: "No product images found" });
@@ -156,13 +176,25 @@ app.post("/generate-video", async (req, res) => {
 
     const output = "/tmp/video.mp4";
 
-    const command = `
+   const command = `
 ffmpeg -y \
--loop 1 -t 3 -i "${images[0]}" \
--loop 1 -t 3 -i "${images[1]}" \
--loop 1 -t 3 -i "${images[2]}" \
--filter_complex "[0:v][1:v][2:v]concat=n=3:v=1:a=0,scale=720:1280,drawtext=text='${script}':fontcolor=white:fontsize=32:x=(w-text_w)/2:y=h-200" \
--c:v libx264 ${output}`;
+-loop 1 -t 4 -i "${images[0]}" \
+-loop 1 -t 4 -i "${images[1]}" \
+-loop 1 -t 4 -i "${images[2]}" \
+-loop 1 -t 4 -i "${images[0]}" \
+-loop 1 -t 4 -i "${images[1]}" \
+-filter_complex "
+[0:v]scale=720:1280,drawtext=text='${scenes[0]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v0];
+[1:v]scale=720:1280,drawtext=text='${scenes[1]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v1];
+[2:v]scale=720:1280,drawtext=text='${scenes[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v2];
+[3:v]scale=720:1280,drawtext=text='${scenes[3]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v3];
+[4:v]scale=720:1280,drawtext=text='${scenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v4];
+[v0][v1][v2][v3][v4]concat=n=5:v=1:a=0
+" \
+-c:v libx264 \
+-pix_fmt yuv420p \
+${output}
+`;
 
     exec(command, (err) => {
 
