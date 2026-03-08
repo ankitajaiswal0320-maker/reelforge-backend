@@ -115,6 +115,8 @@ app.get("/", (req, res) => {
 
 app.post("/generate-video", async (req, res) => {
 
+  console.log("URL Recieved:", req.body.url);
+  
   try {
 
     const productUrl = req.body.url;
