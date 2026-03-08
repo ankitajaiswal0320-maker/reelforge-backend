@@ -13,12 +13,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("/tmp"));
 
+/* ---------------- ASIN EXTRACTOR ---------------- */
+
+function extractASIN(url) {
+  const match = url.match(/\/([A-Z0-9]{10})(?:[/?]|$)/);
+  return match ? match[1] : null;
+}
+
 /* ---------------- AMAZON SCRAPER ---------------- */
 
 async function getAmazonProduct(url) {
+
   try {
 
-    const { data } = await axios.get(url, {
+    const asin = extractASIN(url);
+
+    if (!asin) {
+      throw new Error("Invalid Amazon URL");
+    }
+
+    const cleanUrl = `https://www.amazon.in/dp/${asin}`;
+
+    const { data } = await axios.get(cleanUrl, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
@@ -30,6 +46,7 @@ async function getAmazonProduct(url) {
 
     const title =
       $("#productTitle").text().trim() ||
+      $('meta[name="title"]').attr("content") ||
       $("h1 span").first().text().trim();
 
     const price =
@@ -45,8 +62,6 @@ async function getAmazonProduct(url) {
       const text = $(el).text().trim();
       if (text) features.push(text);
     });
-
-    /* -------- IMAGE EXTRACTION (RELIABLE METHOD) -------- */
 
     const images = [];
 
