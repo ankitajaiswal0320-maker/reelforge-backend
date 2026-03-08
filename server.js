@@ -16,7 +16,8 @@ app.get("/", (req, res) => {
 // Video endpoint
 app.post("/generate-video", (req, res) => {
 
-const script = req.body.generatedScript || "AI Product Review";
+let script = req.body.generatedScript || "AI Product Review";
+script = script.replace(/['":?]/g, "");
 const output = "/tmp/video.mp4";
 
 const command = `ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=6 \
