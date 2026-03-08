@@ -116,7 +116,7 @@ app.get("/", (req, res) => {
 app.post("/generate-video", async (req, res) => {
 
   console.log("URL Recieved:", req.body.url);
-  
+
   try {
 
     const productUrl = req.body.url;
@@ -137,29 +137,36 @@ app.post("/generate-video", async (req, res) => {
       return res.status(400).json({ error: "Could not extract product data" });
     }
 
- const scenes = [];
+    /* -------- GENERATE SCENES -------- */
 
-// Scene 1 — Hook
-scenes.push(`Looking for a good ${title}?`);
+    const scenes = [];
 
-// Scene 2 — Rating
-if (rating) {
-  scenes.push(`This product is rated ${rating} on Amazon`);
-}
+    scenes.push(`Looking for a good ${title}?`);
 
-// Scene 3 & 4 — Features
-features.slice(0,2).forEach(f => {
-  scenes.push(f);
-});
+    if (rating) {
+      scenes.push(`This product is rated ${rating} on Amazon`);
+    }
 
-// Scene 5 — CTA
-scenes.push(`Check the link in description to see the latest price`);
+    features.slice(0,2).forEach(f => {
+      scenes.push(f);
+    });
 
-// Ensure we always have 5 scenes
-while (scenes.length < 5) {
-  scenes.push(`Great choice for your home`);
-}
+    scenes.push(`Check the link in description to see the latest price`);
 
+    while (scenes.length < 5) {
+      scenes.push(`Great choice for your home`);
+    }
+
+    /* -------- CLEAN TEXT -------- */
+
+    const cleanScenes = scenes.map(s =>
+      s
+        .replace(/['":]/g, "")
+        .replace(/[()]/g, "")
+        .replace(/&/g, "and")
+        .replace(/\n/g, " ")
+        .substring(0, 100)
+    );
 
     if (images.length === 0) {
       return res.status(400).json({ error: "No product images found" });
@@ -171,7 +178,9 @@ while (scenes.length < 5) {
 
     const output = "/tmp/video.mp4";
 
-   const command = `
+    /* -------- FFMPEG VIDEO COMMAND -------- */
+
+    const command = `
 ffmpeg -y \
 -loop 1 -t 4 -i "${images[0]}" \
 -loop 1 -t 4 -i "${images[1]}" \
@@ -179,11 +188,11 @@ ffmpeg -y \
 -loop 1 -t 4 -i "${images[0]}" \
 -loop 1 -t 4 -i "${images[1]}" \
 -filter_complex "
-[0:v]scale=720:1280,drawtext=text='${scenes[0]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v0];
-[1:v]scale=720:1280,drawtext=text='${scenes[1]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v1];
-[2:v]scale=720:1280,drawtext=text='${scenes[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v2];
-[3:v]scale=720:1280,drawtext=text='${scenes[3]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v3];
-[4:v]scale=720:1280,drawtext=text='${scenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v4];
+[0:v]scale=800:1400,zoompan=z='min(zoom+0.0015,1.5)':d=100,scale=720:1280,drawtext=text='${cleanScenes[0]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v0];
+[1:v]scale=800:1400,zoompan=z='min(zoom+0.0015,1.5)':d=100,scale=720:1280,drawtext=text='${cleanScenes[1]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v1];
+[2:v]scale=800:1400,zoompan=z='min(zoom+0.0015,1.5)':d=100,scale=720:1280,drawtext=text='${cleanScenes[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v2];
+[3:v]scale=800:1400,zoompan=z='min(zoom+0.0015,1.5)':d=100,scale=720:1280,drawtext=text='${cleanScenes[3]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v3];
+[4:v]scale=800:1400,zoompan=z='min(zoom+0.0015,1.5)':d=100,scale=720:1280,drawtext=text='${cleanScenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200[v4];
 [v0][v1][v2][v3][v4]concat=n=5:v=1:a=0
 " \
 -c:v libx264 \
