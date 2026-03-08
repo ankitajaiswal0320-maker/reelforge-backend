@@ -102,7 +102,7 @@ Return scenes separated by new lines.
 `
 
 const response = await axios.post(
-"https://api-inference.huggingface.co/models/google/flan-t5-large",
+"https://router.huggingface.co/hf-inference/models/google/flan-t5-large",
 {
 inputs: prompt
 },
