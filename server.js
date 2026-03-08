@@ -16,11 +16,8 @@ app.use(express.static("/tmp"))
 /* ---------------- ASIN EXTRACTOR ---------------- */
 
 function extractASIN(url){
-
-const match = url.match(/\/([A-Z0-9]{10})(?:[/?]|$)/)
-
+const match = url.match(//([A-Z0-9]{10})(?:[/?]|$)/)
 return match ? match[1] : null
-
 }
 
 /* ---------------- AMAZON SCRAPER ---------------- */
@@ -29,7 +26,9 @@ async function getAmazonProduct(url){
 
 const asin = extractASIN(url)
 
-const cleanUrl = `https://www.amazon.in/dp/${asin}`
+if(!asin) throw new Error("Invalid Amazon URL")
+
+const cleanUrl = "https://www.amazon.in/dp/${asin}"
 
 const { data } = await axios.get(cleanUrl,{
 headers:{
@@ -58,19 +57,24 @@ features:features.slice(0,3)
 
 }
 
-/* ---------------- STORY GENERATOR ---------------- */
+/* ---------------- SCENE GENERATOR ---------------- */
 
-async function generateStory(product){
+function generateScenes(product){
 
-return [
+const title = product.title.substring(0,60)
 
-`Messy room before using ${product.title}`,
-`Person picks up ${product.title}`,
-`${product.title} being used to solve problem`,
-`Close up showing product working`,
-`Clean and satisfying final result`
+const scenes=[]
 
-]
+scenes.push("Unboxing the ${title}")
+scenes.push("Placing the ${title} in a home environment")
+
+product.features.forEach(f=>{
+scenes.push("${title} showing feature ${f}")
+})
+
+scenes.push("Final clean setup with ${title}")
+
+return scenes.slice(0,5)
 
 }
 
@@ -78,8 +82,10 @@ return [
 
 function generatePrompts(product, scenes){
 
+const shortTitle = product.title.substring(0,40)
+
 return scenes.map(scene =>
-`POV smartphone photo, ${scene}, realistic lighting, home environment`
+"POV smartphone photo, ${scene}, realistic lighting, home environment"
 )
 
 }
@@ -88,18 +94,36 @@ return scenes.map(scene =>
 
 async function generateImage(prompt,index){
 
+try{
+
 const response = await axios.post(
 "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2",
 { inputs: prompt },
 {
 headers:{
-Authorization:`Bearer ${process.env.HF_API_KEY}`
+Authorization:"Bearer ${process.env.HF_API_KEY}",
+"Content-Type":"application/json"
 },
-responseType:"arraybuffer"
+responseType:"arraybuffer",
+timeout:120000
 }
 )
 
-const file=`/tmp/scene${index}.jpg`
+const file="/tmp/scene${index}.jpg"
+
+fs.writeFileSync(file,response.data)
+
+return file
+
+}catch(err){
+
+console.log("AI image failed, using fallback")
+
+const fallback="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85"
+
+const response = await axios.get(fallback,{responseType:"arraybuffer"})
+
+const file="/tmp/scene${index}.jpg"
 
 fs.writeFileSync(file,response.data)
 
@@ -107,7 +131,9 @@ return file
 
 }
 
-/* ---------------- CREATE IMAGES ---------------- */
+}
+
+/* ---------------- GENERATE ALL IMAGES ---------------- */
 
 async function createSceneImages(prompts){
 
@@ -131,7 +157,8 @@ function renderVideo(images,scenes,req,res){
 
 const output="/tmp/video.mp4"
 
-const command=`
+const cmd=`
+
 ffmpeg -y \
 -loop 1 -t 6 -i "${images[0]}" \
 -loop 1 -t 6 -i "${images[1]}" \
@@ -140,27 +167,28 @@ ffmpeg -y \
 -loop 1 -t 6 -i "${images[4]}" \
 -filter_complex "
 
-[0:v]scale=720:1280,rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[0]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5:boxborderw=20[v0];
+[0:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
+drawtext=text='${scenes[0]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v0];
 
-[1:v]scale=720:1280,rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[1]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5:boxborderw=20[v1];
+[1:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
+drawtext=text='${scenes[1]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v1];
 
-[2:v]scale=720:1280,rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[2]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5:boxborderw=20[v2];
+[2:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
+drawtext=text='${scenes[2]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v2];
 
-[3:v]scale=720:1280,rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[3]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5:boxborderw=20[v3];
+[3:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
+drawtext=text='${scenes[3]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v3];
 
-[4:v]scale=720:1280,rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[4]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5:boxborderw=20[v4];
+[4:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
+drawtext=text='${scenes[4]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v4];
 
 [v0][v1][v2][v3][v4]concat=n=5:v=1:a=0
 " \
 -c:v libx264 -pix_fmt yuv420p ${output}
+
 `
 
-const ffmpeg = spawn("bash",["-c",command])
+const ffmpeg = spawn("bash",["-c",cmd])
 
 ffmpeg.stderr.on("data",data=>{
 console.log(data.toString())
@@ -174,7 +202,7 @@ return res.status(500).json({error:"Video generation failed"})
 
 res.json({
 status:"success",
-videoUrl:`${req.protocol}://${req.get("host")}/video.mp4`
+videoUrl:"${req.protocol}://${req.get("host")}/video.mp4"
 })
 
 })
@@ -189,7 +217,7 @@ try{
 
 const product = await getAmazonProduct(req.body.url)
 
-const scenes = await generateStory(product)
+const scenes = generateScenes(product)
 
 const prompts = generatePrompts(product,scenes)
 
@@ -197,15 +225,11 @@ const images = await createSceneImages(prompts)
 
 renderVideo(images,scenes,req,res)
 
-}
-
-catch(err){
+}catch(err){
 
 console.error(err)
 
-res.status(500).json({
-error:"Video generation failed"
-})
+res.status(500).json({error:"Video generation failed"})
 
 }
 
@@ -220,5 +244,5 @@ res.send("AI Product Video API Running")
 const PORT=3000
 
 app.listen(PORT,"0.0.0.0",()=>{
-console.log(`Server running on port ${PORT}`)
+console.log("Server running on port ${PORT}")
 })
