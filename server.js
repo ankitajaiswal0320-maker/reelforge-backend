@@ -16,8 +16,10 @@ app.use(express.static("/tmp"));
 
 /* ---------------- AMAZON SCRAPER ---------------- */
 
-async function getAmazonImages(url) {
+async function getAmazonProduct(url) {
+
   try {
+
     const { data } = await axios.get(url, {
       headers: {
         "User-Agent":
@@ -27,6 +29,22 @@ async function getAmazonImages(url) {
     });
 
     const $ = cheerio.load(data);
+
+    const title = $("#productTitle").text().trim();
+
+    const price =
+      $("#priceblock_ourprice").text().trim() ||
+      $("#priceblock_dealprice").text().trim() ||
+      $(".a-price .a-offscreen").first().text().trim();
+
+    const rating = $(".a-icon-alt").first().text().trim();
+
+    const features = [];
+
+    $("#feature-bullets li").each((i, el) => {
+      const text = $(el).text().trim();
+      if (text) features.push(text);
+    });
 
     const images = [];
 
@@ -38,10 +56,26 @@ async function getAmazonImages(url) {
       }
     });
 
-    return images.slice(0, 3);
+    return {
+      title,
+      price,
+      rating,
+      features: features.slice(0,4),
+      images: images.slice(0,3)
+    };
+
   } catch (err) {
+
     console.error("Amazon scraping failed:", err.message);
-    return [];
+
+    return {
+      title: "",
+      price: "",
+      rating: "",
+      features: [],
+      images: []
+    };
+
   }
 }
 
@@ -56,7 +90,8 @@ app.get("/", (req, res) => {
 app.post("/generate-video", async (req, res) => {
   try {
     let script =
-      req.body.script || req.body.generatedScript || "AI Product Review";
+      req.body.script ||
+`${title}. Rated ${rating}. Price ${price}. ${features.join(". ")}`;
 
     const productUrl = req.body.url;
 
@@ -64,7 +99,13 @@ app.post("/generate-video", async (req, res) => {
       return res.status(400).json({ error: "Product URL missing" });
     }
 
-    const images = await getAmazonImages(productUrl);
+    const product = await getAmazonProduct(productUrl);
+
+    const images = product.images;
+    const title = product.title;
+    const features = product.features;
+    const price = product.price;
+    const rating = product.rating;
 
     if (images.length === 0) {
       return res.status(400).json({ error: "No product images found" });
@@ -79,8 +120,7 @@ app.post("/generate-video", async (req, res) => {
 
     const output = "/tmp/video.mp4";
 
-    const command = `
-ffmpeg -y \
+    const command = `ffmpeg -y \
 -loop 1 -t 3 -i "${images[0]}" \
 -loop 1 -t 3 -i "${images[1]}" \
 -loop 1 -t 3 -i "${images[2]}" \
