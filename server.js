@@ -102,7 +102,7 @@ Return scenes separated by new lines.
 `
 
 const response = await axios.post(
-"https://router.huggingface.co/hf-inference/models/google/flan-t5-large",
+"https://api-inference.huggingface.co/hf-inference/models/google/flan-t5-large",
 {
 inputs: prompt
 },
@@ -115,7 +115,7 @@ Authorization: `Bearer ${process.env.HF_API_KEY}`
 
 const text = response.data[0].generated_text
 
-return text.split("\n").filter(s => s.trim() !== "")
+return text.split("\n").map(s=>s.trim()).filter(s => s.length>0)
 }
 
 /* ---------------- TEXT WRAPPER ---------------- */
