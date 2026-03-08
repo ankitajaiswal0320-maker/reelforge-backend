@@ -1,3 +1,5 @@
+global.File = class File {};
+
 const express = require("express");
 const cors = require("cors");
 const { exec } = require("child_process");
@@ -15,7 +17,7 @@ app.use(express.static("/tmp"));
 async function getAmazonImages(url) {
   const { data } = await axios.get(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0"
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
   });
 
