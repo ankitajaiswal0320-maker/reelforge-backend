@@ -20,7 +20,7 @@ app.post("/generate-video", (req, res) => {
 
 const output = "/tmp/video.mp4";
 
-exec(`ffmpeg -f lavfi -i color=c=black:s=1080x1920:d=5 -c:v libx264 -t 5 ${output}`, (err) => {
+exec(`ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=5 -vf "drawtext=text='ReelForge AI Review':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2" -c:v libx264 ${output}`, (err) => {
 
 if (err) {
 return res.status(500).json({ error: "Video generation failed" });
