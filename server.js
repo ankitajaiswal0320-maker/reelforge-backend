@@ -3,21 +3,16 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET","POST"],
-  allowedHeaders: ["Content-Type"]
-}));
-
+// Allow requests from anywhere
+app.use(cors());
 app.use(express.json());
 
+// Root route
 app.get("/", (req, res) => {
-  res.json({
-    status: "running",
-    message: "ReelForge API working"
-  });
+  res.send("ReelForge API is running");
 });
 
+// Video endpoint
 app.post("/generate-video", (req, res) => {
   res.json({
     status: "success",
@@ -25,8 +20,9 @@ app.post("/generate-video", (req, res) => {
   });
 });
 
+// IMPORTANT: Railway port
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running on port " + PORT);
 });
