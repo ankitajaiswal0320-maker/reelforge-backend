@@ -14,13 +14,16 @@ app.get("/", (req, res) => {
 });
 
 // Video endpoint
-const { exec } = require("child_process");
-
 app.post("/generate-video", (req, res) => {
 
+const script = req.body.script || "AI Product Review";
 const output = "/tmp/video.mp4";
 
-exec(`ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=5 -vf "drawtext=text='ReelForge AI Review':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2" -c:v libx264 ${output}`, (err) => {
+const command = `ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=6 \
+-vf "drawtext=text='${script}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/2" \
+-c:v libx264 ${output}`;
+
+exec(command, (err) => {
 
 if (err) {
 return res.status(500).json({ error: "Video generation failed" });
