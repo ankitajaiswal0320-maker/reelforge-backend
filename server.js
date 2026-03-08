@@ -149,7 +149,10 @@ app.post("/generate-video", async (req, res) => {
       images.push(images[0]);
     }
 
-    script = script.replace(/['":?]/g, "");
+    script = script
+    .replace(/['":?]/g, "")
+    .replace(/\n/g, " ")
+    .substring(0, 120);
 
     const output = "/tmp/video.mp4";
 
@@ -158,7 +161,7 @@ app.post("/generate-video", async (req, res) => {
 -loop 1 -t 3 -i "${images[1]}" \
 -loop 1 -t 3 -i "${images[2]}" \
 -filter_complex "[0:v][1:v][2:v]concat=n=3:v=1:a=0" \
--vf "scale=720:1280,drawtext=text='${script}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=h-200" \
+-vf "scale=720:1280,drawtext=text='${script}':fontcolor=white:fontsize=32:x=(w-text_w)/2:y=h-200" \
 -c:v libx264 ${output}`;
 
     exec(command, (err) => {
