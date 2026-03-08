@@ -6,7 +6,7 @@ const app = express();
 // Allow requests from anywhere
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static("/tmp"));
 
 // Root route
 app.get("/", (req, res) => {
@@ -18,7 +18,7 @@ const { exec } = require("child_process");
 
 app.post("/generate-video", (req, res) => {
 
-const output = "video.mp4";
+const output = "/tmp/video.mp4";
 
 exec(`ffmpeg -f lavfi -i color=c=black:s=1080x1920:d=5 -c:v libx264 -t 5 ${output}`, (err) => {
 
@@ -28,7 +28,7 @@ return res.status(500).json({ error: "Video generation failed" });
 
 res.json({
 status: "success",
-videoUrl: `https://aware-creation-production-4ba6.up.railway.app/${output}`
+videoUrl: "https://aware-creation-production-4ba6.up.railway.app/video.mp4"
 });
 
 });
