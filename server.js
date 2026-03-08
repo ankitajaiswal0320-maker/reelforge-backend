@@ -3,11 +3,19 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET","POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("ReelForge Video API Running");
+  res.json({
+    status: "running",
+    message: "ReelForge API working"
+  });
 });
 
 app.post("/generate-video", (req, res) => {
