@@ -9,7 +9,6 @@ const cheerio = require("cheerio");
 
 const app = express();
 
-// Allow requests
 app.use(cors());
 app.use(express.json());
 app.use(express.static("/tmp"));
@@ -17,7 +16,6 @@ app.use(express.static("/tmp"));
 /* ---------------- AMAZON SCRAPER ---------------- */
 
 async function getAmazonProduct(url) {
-
   try {
 
     const { data } = await axios.get(url, {
@@ -30,7 +28,9 @@ async function getAmazonProduct(url) {
 
     const $ = cheerio.load(data);
 
-    const title = $("#productTitle").text().trim();
+    const title =
+      $("#productTitle").text().trim() ||
+      $("h1 span").first().text().trim();
 
     const price =
       $("#priceblock_ourprice").text().trim() ||
@@ -46,13 +46,24 @@ async function getAmazonProduct(url) {
       if (text) features.push(text);
     });
 
+    /* -------- IMAGE EXTRACTION (RELIABLE METHOD) -------- */
+
     const images = [];
 
-    $("img").each((i, el) => {
-      const src = $(el).attr("src");
+    $("script").each((i, el) => {
+      const script = $(el).html();
 
-      if (src && src.includes("images")) {
-        images.push(src);
+      if (script && script.includes("ImageBlockATF")) {
+
+        const matches = script.match(/"hiRes":"(.*?)"/g);
+
+        if (matches) {
+          matches.forEach(img => {
+            const clean = img.replace('"hiRes":"', "").replace('"', "");
+            images.push(clean);
+          });
+        }
+
       }
     });
 
@@ -88,10 +99,8 @@ app.get("/", (req, res) => {
 /* ---------------- VIDEO GENERATOR ---------------- */
 
 app.post("/generate-video", async (req, res) => {
+
   try {
-    let script =
-      req.body.script ||
-`${title}. Rated ${rating}. Price ${price}. ${features.join(". ")}`;
 
     const productUrl = req.body.url;
 
@@ -107,11 +116,18 @@ app.post("/generate-video", async (req, res) => {
     const price = product.price;
     const rating = product.rating;
 
+    if (!title) {
+      return res.status(400).json({ error: "Could not extract product data" });
+    }
+
+    let script =
+      req.body.script ||
+      `${title}. Rated ${rating}. Price ${price}. ${features.join(". ")}`;
+
     if (images.length === 0) {
       return res.status(400).json({ error: "No product images found" });
     }
 
-    // ensure at least 3 images
     while (images.length < 3) {
       images.push(images[0]);
     }
@@ -126,10 +142,10 @@ app.post("/generate-video", async (req, res) => {
 -loop 1 -t 3 -i "${images[2]}" \
 -filter_complex "[0:v][1:v][2:v]concat=n=3:v=1:a=0" \
 -vf "scale=720:1280,drawtext=text='${script}':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=h-200" \
--c:v libx264 ${output}
-`;
+-c:v libx264 ${output}`;
 
     exec(command, (err) => {
+
       if (err) {
         console.error("FFmpeg error:", err);
         return res.status(500).json({ error: "Video generation failed" });
@@ -139,11 +155,17 @@ app.post("/generate-video", async (req, res) => {
         status: "success",
         videoUrl: `${req.protocol}://${req.get("host")}/video.mp4`
       });
+
     });
+
   } catch (error) {
+
     console.error("Server error:", error);
+
     res.status(500).json({ error: "Internal server error" });
+
   }
+
 });
 
 /* ---------------- SERVER ---------------- */
