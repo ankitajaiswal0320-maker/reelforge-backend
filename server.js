@@ -6,6 +6,7 @@ const app = express();
 // Allow requests from anywhere
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 // Root route
 app.get("/", (req, res) => {
@@ -19,7 +20,7 @@ app.post("/generate-video", (req, res) => {
 
 const output = "video.mp4";
 
-exec(`ffmpeg -f lavfi -i color=c=black:s=1080x1920:d=5 -vf "drawtext=text='ReelForge AI Review':fontcolor=white:fontsize=60:x=(w-text_w)/2:y=(h-text_h)/2" ${output}`, (err) => {
+exec(`ffmpeg -f lavfi -i color=c=black:s=1080x1920:d=5 -c:v libx264 -t 5 ${output}`, (err) => {
 
 if (err) {
 return res.status(500).json({ error: "Video generation failed" });
