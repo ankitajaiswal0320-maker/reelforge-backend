@@ -200,19 +200,26 @@ ffmpeg -y \
 ${output}
 `;
 
-    exec(command, (err) => {
+const { spawn } = require("child_process");
 
-      if (err) {
-        console.error("FFmpeg error:", err);
-        return res.status(500).json({ error: "Video generation failed" });
-      }
+const ffmpeg = spawn("bash", ["-c", command]);
 
-      res.json({
-        status: "success",
-        videoUrl: `${req.protocol}://${req.get("host")}/video.mp4`
-      });
+ffmpeg.stderr.on("data", (data) => {
+  console.log(`FFmpeg: ${data}`);
+});
 
-    });
+ffmpeg.on("close", (code) => {
+
+  if (code !== 0) {
+    return res.status(500).json({ error: "Video generation failed" });
+  }
+
+  res.json({
+    status: "success",
+    videoUrl: `${req.protocol}://${req.get("host")}/video.mp4`
+  });
+
+});
 
   } catch (error) {
 
