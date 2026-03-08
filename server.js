@@ -1,8 +1,3 @@
-
-Ankita Jaiswal <ankitajaiswal0320@gmail.com>
-2:10 PM (0 minutes ago)
-to me
-
 const express = require("express");
 const { exec } = require("child_process");
 
