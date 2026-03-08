@@ -13,14 +13,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("/tmp"));
 
-/* ---------------- ASIN ---------------- */
+/* ---------------- TEXT CLEANER ---------------- */
+
+function cleanText(text) {
+  return text
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .substring(0, 80);
+}
+
+/* ---------------- ASIN EXTRACTOR ---------------- */
 
 function extractASIN(url) {
   const match = url.match(/\/([A-Z0-9]{10})(?:[/?]|$)/);
   return match ? match[1] : null;
 }
 
-/* ---------------- SCRAPE AMAZON ---------------- */
+/* ---------------- AMAZON SCRAPER ---------------- */
 
 async function getAmazonProduct(url) {
 
@@ -74,18 +84,18 @@ async function getAmazonProduct(url) {
   });
 
   return {
-    title,
-    features: features.slice(0,3),
+    title: cleanText(title),
+    features: features.map(f => cleanText(f)).slice(0,3),
     images: images.slice(0,5)
   };
 
 }
 
-/* ---------------- VIDEO STORY ---------------- */
+/* ---------------- SCENE GENERATOR ---------------- */
 
 function generateScenes(product) {
 
-  const title = product.title.substring(0,60);
+  const title = product.title;
 
   const scenes = [];
 
@@ -94,22 +104,25 @@ function generateScenes(product) {
   scenes.push(`Using the ${title} in daily life`);
 
   if(product.features[0])
-  scenes.push(product.features[0].substring(0,60));
+    scenes.push(product.features[0]);
+  else
+    scenes.push(`Premium design and quality`);
 
   scenes.push(`Final look at the ${title}`);
 
   return scenes.slice(0,5);
+
 }
 
 /* ---------------- DOWNLOAD IMAGES ---------------- */
 
-async function downloadImages(imageUrls) {
+async function downloadImages(urls) {
 
   const images = [];
 
-  for (let i = 0; i < imageUrls.length; i++) {
+  for (let i = 0; i < urls.length; i++) {
 
-    const response = await axios.get(imageUrls[i], {
+    const response = await axios.get(urls[i], {
       responseType: "arraybuffer"
     });
 
@@ -125,7 +138,7 @@ async function downloadImages(imageUrls) {
 
 }
 
-/* ---------------- VIDEO ENGINE ---------------- */
+/* ---------------- VIDEO RENDER ---------------- */
 
 function renderVideo(images, scenes, req, res) {
 
@@ -133,37 +146,37 @@ function renderVideo(images, scenes, req, res) {
 
   const cmd = `
 ffmpeg -y \
--loop 1 -t 6 -i "${images[0]}" \
--loop 1 -t 6 -i "${images[1]}" \
--loop 1 -t 6 -i "${images[2]}" \
--loop 1 -t 6 -i "${images[3]}" \
--loop 1 -t 6 -i "${images[4]}" \
+-loop 1 -t 5 -i "${images[0]}" \
+-loop 1 -t 5 -i "${images[1]}" \
+-loop 1 -t 5 -i "${images[2]}" \
+-loop 1 -t 5 -i "${images[3]}" \
+-loop 1 -t 5 -i "${images[4]}" \
 -filter_complex "
 
-[0:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
-rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[0]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-220:box=1:boxcolor=black@0.5[v0];
+[0:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,
+zoompan=z='min(zoom+0.0015,1.4)':d=125,
+drawtext=text='${scenes[0]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200:box=1:boxcolor=black@0.5[v0];
 
-[1:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
-rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[1]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-220:box=1:boxcolor=black@0.5[v1];
+[1:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,
+zoompan=z='min(zoom+0.0015,1.4)':d=125,
+drawtext=text='${scenes[1]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200:box=1:boxcolor=black@0.5[v1];
 
-[2:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
-rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-220:box=1:boxcolor=black@0.5[v2];
+[2:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,
+zoompan=z='min(zoom+0.0015,1.4)':d=125,
+drawtext=text='${scenes[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200:box=1:boxcolor=black@0.5[v2];
 
-[3:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
-rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[3]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-220:box=1:boxcolor=black@0.5[v3];
+[3:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,
+zoompan=z='min(zoom+0.0015,1.4)':d=125,
+drawtext=text='${scenes[3]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200:box=1:boxcolor=black@0.5[v3];
 
-[4:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
-rotate='sin(t*2)*0.01',
-drawtext=text='${scenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-220:box=1:boxcolor=black@0.5[v4];
+[4:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,
+zoompan=z='min(zoom+0.0015,1.4)':d=125,
+drawtext=text='${scenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-200:box=1:boxcolor=black@0.5[v4];
 
-[v0][v1]xfade=transition=fade:duration=1:offset=5[v01];
-[v01][v2]xfade=transition=fade:duration=1:offset=10[v02];
-[v02][v3]xfade=transition=fade:duration=1:offset=15[v03];
-[v03][v4]xfade=transition=fade:duration=1:offset=20
+[v0][v1]xfade=transition=fade:duration=1:offset=4[v01];
+[v01][v2]xfade=transition=fade:duration=1:offset=8[v02];
+[v02][v3]xfade=transition=fade:duration=1:offset=12[v03];
+[v03][v4]xfade=transition=fade:duration=1:offset=16
 " \
 -c:v libx264 -pix_fmt yuv420p ${output}
 `;
