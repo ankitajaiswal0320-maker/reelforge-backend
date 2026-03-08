@@ -11,17 +11,14 @@ app.get("/", (req, res) => {
 });
 
 app.post("/generate-video", (req, res) => {
-  const { text } = req.body;
-
-  console.log("Received request:", text);
-
   res.json({
     status: "success",
-    message: "Video generation started",
-    videoUrl: "/sample-video.mp4"
+    videoUrl: "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
   });
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server started");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
