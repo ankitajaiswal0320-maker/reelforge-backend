@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
 // Video endpoint
 app.post("/generate-video", (req, res) => {
 
-let script = req.body.script || req.body.generatedScript || "AI Product Review";
+let script = "THIS VIDEO WAS DEN FROM BACKEND";
 script = script.replace(/['":?]/g, "");
 const output = "/tmp/video.mp4";
 
