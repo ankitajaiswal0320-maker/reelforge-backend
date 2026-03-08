@@ -187,8 +187,7 @@ drawtext=text='${scenes[4]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h-180:
 
   const ffmpeg = spawn("bash",["-c",cmd]);
 
-  ffmpeg.stderr.on("data",data=>{
-    console.log(data.toString());
+  ffmpeg.stderr.on("data",() => {});
   });
 
   ffmpeg.on("close",code=>{
