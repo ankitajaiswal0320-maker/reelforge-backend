@@ -92,23 +92,30 @@ images:images.slice(0,3)
 async function generateStory(product){
 
 const prompt = `
-Create a 5 scene product video story.
+Create a 5 scene short product video story.
 
 Product: ${product.title}
 
 Each scene should describe a visual moment.
 Maximum 10 words per scene.
-Return only the scenes separated by line breaks.
+Return scenes separated by new lines.
 `
 
-const response = await openai.chat.completions.create({
-model:"gpt-4o-mini",
-messages:[{role:"user",content:prompt}]
-})
+const response = await axios.post(
+"https://api-inference.huggingface.co/models/google/flan-t5-large",
+{
+inputs: prompt
+},
+{
+headers: {
+Authorization: `Bearer ${process.env.HF_API_KEY}`
+}
+}
+)
 
-const text = response.choices[0].message.content
+const text = response.data[0].generated_text
 
-return text.split("\n").filter(s=>s.trim()!=="")
+return text.split("\n").filter(s => s.trim() !== "")
 }
 
 /* ---------------- TEXT WRAPPER ---------------- */
