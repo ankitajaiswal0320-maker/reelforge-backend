@@ -82,8 +82,6 @@ return scenes.slice(0,5)
 
 function generatePrompts(product, scenes){
 
-const shortTitle = product.title.substring(0,40)
-
 return scenes.map(scene =>
 "POV smartphone photo, ${scene}, realistic lighting, home environment"
 )
@@ -159,12 +157,12 @@ const output="/tmp/video.mp4"
 
 const cmd=`
 
-ffmpeg -y \
--loop 1 -t 6 -i "${images[0]}" \
--loop 1 -t 6 -i "${images[1]}" \
--loop 1 -t 6 -i "${images[2]}" \
--loop 1 -t 6 -i "${images[3]}" \
--loop 1 -t 6 -i "${images[4]}" \
+ffmpeg -y 
+-loop 1 -t 6 -i "${images[0]}" 
+-loop 1 -t 6 -i "${images[1]}" 
+-loop 1 -t 6 -i "${images[2]}" 
+-loop 1 -t 6 -i "${images[3]}" 
+-loop 1 -t 6 -i "${images[4]}" 
 -filter_complex "
 
 [0:v]scale=720:1280,zoompan=z='min(zoom+0.0015,1.5)':d=150,
@@ -183,7 +181,7 @@ drawtext=text='${scenes[3]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:
 drawtext=text='${scenes[4]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-250:box=1:boxcolor=black@0.5[v4];
 
 [v0][v1][v2][v3][v4]concat=n=5:v=1:a=0
-" \
+" 
 -c:v libx264 -pix_fmt yuv420p ${output}
 
 `
