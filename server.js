@@ -159,11 +159,11 @@ ffmpeg -loglevel error -y \
 -loop 1 -t 3 -i "${images[3]}" \
 -loop 1 -t 3 -i "${images[4]}" \
 -filter_complex "
-[0:v]scale=720:1280,drawtext=text='${scenes[0]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v0];
-[1:v]scale=720:1280,drawtext=text='${scenes[1]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v1];
-[2:v]scale=720:1280,drawtext=text='${scenes[2]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v2];
-[3:v]scale=720:1280,drawtext=text='${scenes[3]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v3];
-[4:v]scale=720:1280,drawtext=text='${scenes[4]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v4];
+[0:v]scale=720:1280,force_original_aspect_ratio=text='${scenes[0]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v0];
+[1:v]scale=720:1280,force_original_aspect_ratio=text='${scenes[1]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v1];
+[2:v]scale=720:1280,force_original_aspect_ratio=text='${scenes[2]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v2];
+[3:v]scale=720:1280,force_original_aspect_ratio=text='${scenes[3]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v3];
+[4:v]scale=720:1280,force_original_aspect_ratio=text='${scenes[4]}':fontcolor=white:fontsize=42:x=(w-text_w)/2:y=h-200[v4];
 [v0][v1][v2][v3][v4]concat=n=5:v=1:a=0
 " \
 -c:v libx264 -pix_fmt yuv420p ${output}
